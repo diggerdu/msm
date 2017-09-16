@@ -1,5 +1,8 @@
 import pandas as pd
 from math import radians, cos, sin, asin, sqrt
+from sklearn.externals import joblib
+import numpy as np
+
 
 def loadExcel(fn):
     xl = pd.ExcelFile(fn)
@@ -37,12 +40,14 @@ class Client(Object):
         return 'Client(gps=({}, {}), share={}, repu={})'.format(self.lat, self.lon , self.share, self.repu)
 
 class TaskCom(Object):
-    def __init__(self, lat, lon, price, finished):
+    def __init__(self, lat, lon, price, finished, cluster):
         Object.__init__(self, lat, lon)
         self.price = price
         self.finished = finished
+        self.cluster = cluster
     def __repr__(self):
-        return 'TaskCompleted(gps=({}, {}), price={}, finished={})'.format(self.lat, self.lon, self.price, self.finished)
+        return 'TaskCompleted(gps:({}, {}), price:{}, finished:{}, cluster:{})'.format(self.lon,
+                self.lat, self.price, self.finished, self.cluster)
 
 class Data():
     def __init__(self):
@@ -58,7 +63,12 @@ class Data():
         gpsTasksLon = list(map(float, self.data0['任务gps经度']))
         priceTask = list(map(float, self.data0['任务标价']))
         finishedTask = list(map(bool, self.data0['任务执行情况']))
-        return list(map(lambda p:TaskCom(*p), list(zip(gpsTasksLat, gpsTasksLon, priceTask, finishedTask))))
+        kmModel = joblib.load('models/kmModel.pkl')
+        cluster = kmModel.predict(list(zip(gpsTasksLon, gpsTasksLat)))
+        np.save('data', np.array(cluster))
+        print(cluster)
+        return list(map(lambda p:TaskCom(*p),
+            list(zip(gpsTasksLat, gpsTasksLon, priceTask, finishedTask, cluster))))
 
 
 
@@ -66,6 +76,8 @@ class Data():
 if __name__ == '__main__':
     data = Data()
     print(data.clients[0])
-    print(data.tasksCom[0])
+
+    for i in range(20):
+        print(data.tasksCom[i])
 
 
