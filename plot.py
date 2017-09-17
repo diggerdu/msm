@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+import gmaps
 from data import Data
 from sklearn.cluster import KMeans
 from sklearn.externals import joblib
@@ -8,23 +10,35 @@ from sklearn.externals import joblib
 data = Data()
 
 TaskPos = np.array([[t.lon, t.lat] for t in data.tasksCom])
+# TaskPos = pd.DataFrame(data=TaskPos, columns=['lon', 'lat'])
+
+
+ClientPos = np.array([[c.lon, c.lat] for c in data.clients if c.cluster==0])
+
+
+
+MetroPos = np.array([[t.lon, t.lat] for t in data.stations])
 FinishedTaskPos = list(zip(*[[t.lon, t.lat] for t in data.tasksCom if t.finished]))
 UnfinishedTaskPos = list(zip(*[[t.lon, t.lat] for t in data.tasksCom if not t.finished]))
 
-kmModel = KMeans(n_clusters=2, random_state=1016, n_jobs=-1, max_iter=1e5).fit(TaskPos)
-joblib.dump(kmModel, "models/kmModel.pkl")
-y_pred = kmModel.predict(TaskPos)
 
-np.save('plot', np.array(y_pred))
+# TaskPos = np.array([[t.lon, t.lat] for t in data.tasksCom if t.cluster==1])
+TaskPosDF = pd.DataFrame(data=TaskPos, columns=['lon', 'lat'])
+
+gmaps.scatter(TaskPosDF['lat'], TaskPosDF['lon'], colors='blue')
 
 
-
-np.save('cluster', y_pred)
 plt.subplot(211)
 plt.scatter(*FinishedTaskPos, c='b', s=1)
 plt.scatter(*UnfinishedTaskPos, c='r', s=1)
+plt.scatter(MetroPos[:, 0], MetroPos[:, 1], c='g', s=1)
 
 plt.subplot(212)
-plt.scatter(TaskPos[:, 0], TaskPos[:, 1], c=y_pred, s=1)
+C = np.array(['b', 'g', 'k'])
+TaskCluster = [t.cluster for t in data.tasksCom]
+plt.scatter(TaskPos[:, 0], TaskPos[:, 1], c=C[TaskCluster], s=1)
+plt.scatter(ClientPos[:, 0], ClientPos[:, 1], c='c', s=1)
+
+
 plt.show()
 

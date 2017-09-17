@@ -9,9 +9,9 @@ import torch
 
 
 
-def prepareData():
+def prepareData(cluster):
     data = Data()
-    label = np.array([int(task.finished) for task in data.tasksCom])
+    label = np.array([float(t.finished) for t in data.tasksCom if t.cluster==cluster])
     try:
         features = np.load("features.npy")
         print("###########features shape###########", features.shape)
@@ -19,18 +19,21 @@ def prepareData():
     except:
         pass
 
-    repuData = np.array([client.repu for client in data.clients])
+    repuData = np.array([c.repu for c in data.clients if c.cluster==cluster])
+
     repuData = np.log10(repuData + 10.) / np.log10(80)
     repuDataMean = np.mean(repuData)
     repuData = repuData - repuDataMean
     repuData = repuData / np.max(np.abs(repuData))
+
     features = list()
-    for task in data.tasksCom:
-        dis = list()
-        for client in data.clients:
-            dis.append(task.haversine(client))
+    for task in [t for t in data.tasksCom if t.cluster==cluster]:
+        dis = [task.haversine(c) for c in data.clients if c.cluster==cluster]
         dis = np.array(dis)[np.newaxis, :]
-        curFeature = np.concatenate((dis, repuData[np.newaxis, :], task.price * np.ones((1, 1877), dtype=np.float32)), axis=0)[:, None, :]
+        s = dis.shape
+        latFeatures = (task.lat - data.latMin) - (data.latMax - data.latMin)
+        lonFeatures = (task.lon - data.lonMin) - (data.lonMax - data.lonMin)
+        curFeature = np.concatenate((dis, repuData[np.newaxis, :], task.price * np.ones(s)), axis=0)[:, None, :]
         features.append(curFeature)
 
 
@@ -41,18 +44,30 @@ def prepareData():
     dis = dis - disMean
     dis = dis / np.max(np.abs(dis))
     features[:, 0, :, :] = dis
-    np.save('features', features)
+
+    #np.save('features', features)
     print("###########features shape###########", features.shape)
     return features, label
 
+def save_networks(self, network, network_label):
+    save_filename = '%net_%s.pth' % (network_label)
+    save_path = os.path.join(self.save_dir, save_filename)
+    torch.save(network.cpu().state_dict(), save_path)
+    network.cuda()
 
-model = XUANet().cuda()
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 
-features, label = prepareData()
+cluster = 0
+features, label = prepareData(cluster)
+print(features.shape, label.shape)
+inputLen = features.shape[-1]
+
+model = XUANet(inputLen).cuda()
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+
+
 evaX = Variable(torch.cuda.FloatTensor(features))
-evaY = Variable(torch.cuda.FloatTensor(label.astype(float)))
+evaY = Variable(torch.cuda.FloatTensor(label))
 
 
 BS = 64
@@ -63,20 +78,23 @@ for epoch in range(1, 100000000000000000):
     batchX = Variable(torch.cuda.FloatTensor(features[idx]))
     batchY = Variable(torch.cuda.FloatTensor(label[idx].astype(float)))
     _, loss = model(batchX, batchY)
-    #    print(loss.data.cpu()[0])
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
 
-    if epoch % 10 == 0:
+    if epoch % 20 == 0:
+        print('loss', loss.data.cpu().numpy())
+
+    if epoch % 200 == 0:
         prob, _ = model(evaX, evaY)
         prob = prob.data.cpu().numpy()
-        print(prob[Pidx])
-        pred = (prob > 0.5).astype(int)
-        truth = evaY.data.cpu().numpy()
-        print(pred[Pidx])
-        print(truth[Pidx])
-        print('accurancy:', np.sum(pred == truth) / features.shape[0])
+        pred = prob > 0.5
+        truth = evaY.data.cpu().numpy() > 0.5
+
+        prec = np.sum(truth==pred) / truth.shape[0]
+        if prec > 0.81:
+            save_networks(model, 'cluster{}'.format(cluster))
+        print(prec)
     #if epoch % 100 == 0:
     #    print('==>>> epoch: {}, train loss: {:.6f}'.format(epoch, loss))
 
