@@ -71,6 +71,9 @@ model.fit(X=features, y=priceNormal)
 pred = model.predict(features) * priceMax + priceMean
 truth = priceNormal * priceMax + priceMean
 
+
+
+
 idx = np.abs(pred - truth) < 4
 
 features = features[idx]
@@ -89,23 +92,29 @@ priceNormal = priceNormal[idx]
 model.fit(X=features, y=priceNormal)
 pred = model.predict(features) * priceMax + priceMean
 truth = priceNormal * priceMax + priceMean
+
+
 print(r2_score(truth, pred))
 
-
-Lmodel = model.named_steps['linearregression']
-print(Lmodel.coef_)
-
-'''
-x0= np.arange(0, 1, 0.001, dtype=np.float32)[:, np.newaxis]
-x1 = 0.7 * np.ones((x0.shape))
-
-y = model.predict(np.concatenate((x1, x0), axis=1))
-
-plt.scatter(x0, y, c='c', s=1)
+print(pred[250:262])
+print(truth[250:262])
 plt.show()
 
 '''
 
+x0 = 0.7 * np.ones((x0.shape))
+x1 = np.arange(0, 1, 0.01, dtype=np.float32)[:, np.newaxis]
+
+y = model.predict(np.concatenate((x0, x1), axis=1))
+
+
+np.random.seed(seed=1016)
+plt.scatter(x0, y, c='c', s=1)
+plt.xlabel('Task Density')
+plt.ylabel('Price')
+plt.show()
+
+'''
 
 
 
