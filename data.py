@@ -71,6 +71,7 @@ class Data():
         self.kmModel = joblib.load('models/kmModel.pkl')
         self.clients = list(filter(lambda o:o.normal, self.getClients()))
         self.tasksCom = list(filter(lambda o:o.normal, self.getTasks()))
+        self.tasksFu = list(filter(lambda o:o.normal, self.getTasksFu()))
         self.stations = list(filter(lambda o:o.normal, self.getMetro()))
         self.salary = Salary
 
@@ -97,6 +98,16 @@ class Data():
         stationLat = list(map(float, self.data3['Y轴坐标']))
         stationCluster = self.kmModel.predict(list(zip(stationLon, stationLat)))
         return list(map(lambda p:Object(*p), list(zip(stationLat, stationLon, stationCluster))))
+
+    def getTasksFu(self):
+        gpsTasksLat = list(map(float, self.data2['任务GPS纬度']))
+        gpsTasksLon = list(map(float, self.data2['任务GPS经度']))
+        cluster = self.kmModel.predict(list(zip(gpsTasksLon, gpsTasksLat)))
+        return list(map(lambda p:Object(*p),
+            list(zip(gpsTasksLat, gpsTasksLon, cluster))))
+
+
+
 
 
 

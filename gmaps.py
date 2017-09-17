@@ -65,7 +65,7 @@ def scatter(latitudes, longitudes, colors=None, maptype=MAPTYPE):
         pixels['x_pixel'],
         pixels['y_pixel'],
         c=colors,
-        s=width / 20,
+        s=width / 80,
         linewidth=0,
         alpha=0.5,
     )
