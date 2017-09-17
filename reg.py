@@ -91,6 +91,11 @@ pred = model.predict(features) * priceMax + priceMean
 truth = priceNormal * priceMax + priceMean
 print(r2_score(truth, pred))
 
+
+Lmodel = model.named_steps['linearregression']
+print(Lmodel.coef_)
+
+'''
 x0= np.arange(0, 1, 0.001, dtype=np.float32)[:, np.newaxis]
 x1 = 0.7 * np.ones((x0.shape))
 
@@ -98,6 +103,8 @@ y = model.predict(np.concatenate((x1, x0), axis=1))
 
 plt.scatter(x0, y, c='c', s=1)
 plt.show()
+
+'''
 
 
 
