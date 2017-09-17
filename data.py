@@ -104,6 +104,9 @@ class Data():
 
 if __name__ == '__main__':
     data = Data()
-
-    for c in data.clients:
-        print(c)
+    for i in range(3):
+        priceMean = np.mean(np.array([t.price for t in data.tasksCom if t.cluster == i]))
+        print(Cluster[i])
+        print(Salary[i])
+        print(priceMean)
+        print(priceMean / Salary[i])
