@@ -22,8 +22,8 @@ FinishedTaskPos = list(zip(*[[t.lon, t.lat] for t in data.tasksCom if t.finished
 UnfinishedTaskPos = list(zip(*[[t.lon, t.lat] for t in data.tasksCom if not t.finished]))
 
 
-# TaskPos = np.array([[t.lon, t.lat] for t in data.tasksCom if t.cluster==1])
-TaskPosDF = pd.DataFrame(data=TaskPos, columns=['lon', 'lat'])
+TaskPosDF = np.array([[t.lon, t.lat] for t in data.tasksCom if t.cluster==2])
+TaskPosDF = pd.DataFrame(data=TaskPosDF, columns=['lon', 'lat'])
 
 gmaps.scatter(TaskPosDF['lat'], TaskPosDF['lon'], colors='blue')
 
